@@ -1,0 +1,70 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go build and cache
+go.sum
+/vendor/
+/build/
+/dist/
+
+# App-specific
+app/tmp/
+app/logs/
+app/*.log
+app/.env
+app/.env.local
+
+# GitHub files (keep these)
+!.github/ISSUE_TEMPLATE/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows (not supported)
+# Thumbs.db
+# ehthumbs.db
+# Desktop.ini
+
+# Editors
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.log
+tmp/
+temp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Secrets (never commit these!)
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+service-account.json
+secrets/
