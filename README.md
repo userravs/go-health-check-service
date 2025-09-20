@@ -45,6 +45,7 @@ annotations:
 ## 🚀 What it does
 
 - **Production-ready health checks** optimized for Kubernetes (tested on GKE, designed for any cluster)
+- **Graceful shutdown handling** with 30-second timeout for zero-downtime deployments
 - **Environment-aware responses** for different deployment stages
 - **Memory monitoring** with system and Go runtime checks
 - **Local testing capabilities** for simulating warning conditions
@@ -67,6 +68,41 @@ annotations:
 - **`/health`** - Health check (status: "healthy" or "degraded")
 - **`/ready`** - Readiness check (status: "ready" or "not ready")
 - **`/debug/memory`** - Debug endpoint for testing memory warnings
+
+## 🛑 Graceful Shutdown
+
+The service implements graceful shutdown handling for clean termination in containerized environments:
+
+### **How it works:**
+- Listens for `SIGTERM` and `SIGINT` signals (Kubernetes pod termination, Ctrl+C)
+- Stops accepting new requests immediately
+- Allows existing requests to complete within **30-second timeout**
+- Logs shutdown process for monitoring and debugging
+
+### **Kubernetes Integration:**
+```yaml
+# In your deployment manifest
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 30  # Matches app timeout
+      containers:
+      - name: health-check-service
+        # ... other config
+```
+
+### **Benefits:**
+- **Zero dropped connections** during pod restarts/scaling
+- **Clean deployment rollouts** without service interruption
+- **Load balancer friendly** - proper connection cleanup
+- **Production reliability** - prevents abrupt termination errors
+
+### **Shutdown Sequence:**
+1. Signal received (SIGTERM from Kubernetes)
+2. Server stops accepting new requests
+3. Existing requests complete (up to 30 seconds)
+4. Clean shutdown with status logging
+5. Container exits with proper code
 
 ## 🧪 Testing Health Check Warnings
 
@@ -209,6 +245,7 @@ curl -s http://localhost:8080/health | jq '.'
 ## 🎯 Production Features
 
 - **Kubernetes-ready** health and readiness probes
+- **Graceful shutdown handling** with 30-second timeout for clean container termination
 - **Memory leak detection** with configurable thresholds
 - **System resource monitoring** for production environments
 - **Fast response times** optimized for high-frequency health checks
