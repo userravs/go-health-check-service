@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -125,10 +128,36 @@ func main() {
 		log.Printf("🚫 Debug endpoints disabled in production for security: '%s'", environment)
 	}
 
-	// Start server
-	log.Printf("🚀 Server starting on port %s in %s environment (version: %s)\n", port, environment, version)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal("Server failed to start:", err)
+	// Create HTTP server
+	server := &http.Server{
+		Addr: ":" + port,
+	}
+
+	// Create channel to listen for interrupt signals
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// Start server in a goroutine
+	go func() {
+		log.Printf("🚀 Server starting on port %s in %s environment (version: %s)\n", port, environment, version)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("Server failed to start:", err)
+		}
+	}()
+
+	// Block until we receive a signal
+	<-c
+	log.Println("🛑 Shutdown signal received, starting graceful shutdown...")
+
+	// Create a deadline for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("❌ Server forced to shutdown: %v", err)
+	} else {
+		log.Println("✅ Server gracefully stopped")
 	}
 }
 
